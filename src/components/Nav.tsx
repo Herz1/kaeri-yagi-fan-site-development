@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { cn } from "../utils/cn";
 import { IClose, IMenu } from "./icons";
 
@@ -17,6 +17,7 @@ const ITEMS: [string, string][] = [
 export function Nav() {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
+  const menuButton = useRef<HTMLButtonElement>(null);
   const [active, setActive] = useState("home");
   const [prog, setProg] = useState(0);
 
@@ -48,6 +49,11 @@ export function Nav() {
 
   return (
     <header
+      onKeyDown={e => {
+        if (open && e.key === 'Escape' && !e.nativeEvent.isComposing) {
+          e.preventDefault(); setOpen(false); menuButton.current?.focus();
+        }
+      }}
       className={cn(
         "fixed inset-x-0 top-0 z-50 transition-all duration-500",
         scrolled || open ? "border-b border-white/5 bg-abyss/80 backdrop-blur-xl" : "bg-transparent",
@@ -86,12 +92,12 @@ export function Nav() {
             </li>
           ))}
         </ul>
-        <button className="rounded-full p-2 text-foam lg:hidden" onClick={() => setOpen(!open)} aria-label="菜单">
+        <button ref={menuButton} className="rounded-full p-2 text-foam lg:hidden" onClick={() => setOpen(!open)} aria-label={open ? '关闭菜单' : '打开菜单'} aria-expanded={open} aria-controls="mobile-navigation">
           {open ? <IClose /> : <IMenu />}
         </button>
       </nav>
       {open && (
-        <ul className="grid grid-cols-3 gap-2 px-5 pb-5 lg:hidden">
+        <ul id="mobile-navigation" className="grid grid-cols-3 gap-2 px-5 pb-5 lg:hidden">
           {ITEMS.map(([id, label]) => (
             <li key={id}>
               <a

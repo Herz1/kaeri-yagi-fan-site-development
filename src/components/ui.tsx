@@ -69,6 +69,7 @@ export function SectionHead({
 
 export function Img({ src, alt = "", className, ...rest }: ImgHTMLAttributes<HTMLImageElement>) {
   const [err, setErr] = useState(false);
+  useEffect(() => setErr(false), [src]);
   if (err || !src)
     return (
       <div className={cn("grid place-items-center bg-gradient-to-br from-reef to-deep text-[10px] text-mist/60", className)}>
@@ -124,6 +125,7 @@ export function Chip({
   return (
     <button
       onClick={onClick}
+      aria-pressed={active}
       className={cn(
         "whitespace-nowrap rounded-full border px-4 py-1.5 text-sm transition",
         active ? activeClass : "border-white/15 text-mist hover:border-white/40 hover:text-foam",
