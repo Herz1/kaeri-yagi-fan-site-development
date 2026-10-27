@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { ITUNES } from "../data/itunes";
 import { cleanArtist, tracksOf, VCAT_LABEL, videoById, type Release, type Video } from "../data/site";
 import { usePlayer } from "./player";
@@ -37,19 +37,12 @@ export function UIProvider({ children }: { children: ReactNode }) {
   const open = !!video || !!release;
   useEffect(() => {
     if (!open) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key !== "Escape") return;
-      if (video) setVideo(null);
-      else setRelease(null);
-    };
-    window.addEventListener("keydown", onKey);
     const prev = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     return () => {
-      window.removeEventListener("keydown", onKey);
       document.body.style.overflow = prev;
     };
-  }, [open, video]);
+  }, [open]);
 
   return (
     <Ctx.Provider value={api}>
@@ -60,13 +53,30 @@ export function UIProvider({ children }: { children: ReactNode }) {
   );
 }
 
+function useNativeDialog() {
+  const ref = useRef<HTMLDialogElement>(null);
+  useEffect(() => {
+    const dialog = ref.current;
+    if (!dialog) return;
+    const opener = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    dialog.showModal();
+    return () => {
+      if (dialog.open) dialog.close();
+      if (opener?.isConnected) opener.focus({ preventScroll: true });
+    };
+  }, []);
+  return ref;
+}
+
 function VideoModal({ v, onClose }: { v: Video; onClose: () => void }) {
+  const ref = useNativeDialog();
   return (
-    <div
-      className="fixed inset-0 z-[70] grid place-items-center bg-black/90 p-4 backdrop-blur-sm animate-fadein"
+    <dialog
+      ref={ref}
+      className="native-dialog fixed inset-0 z-[70] grid place-items-center bg-black/90 p-4 backdrop-blur-sm animate-fadein"
       onClick={onClose}
-      role="dialog"
-      aria-modal="true"
+      onCancel={e => { e.preventDefault(); e.stopPropagation(); onClose(); }}
+      aria-label={v.title}
     >
       <div className="w-full max-w-5xl" onClick={(e) => e.stopPropagation()}>
         <div className="mb-3 flex items-end justify-between gap-4">
@@ -99,11 +109,12 @@ function VideoModal({ v, onClose }: { v: Video; onClose: () => void }) {
           </a>
         </div>
       </div>
-    </div>
+    </dialog>
   );
 }
 
 function ReleaseModal({ r, onClose, onVideo }: { r: Release; onClose: () => void; onVideo: (id: string) => void }) {
+  const ref = useNativeDialog();
   const p = usePlayer();
   const c = ITUNES[r.it];
   const tracks = useMemo(() => tracksOf(r.it), [r.it]);
@@ -119,11 +130,12 @@ function ReleaseModal({ r, onClose, onVideo }: { r: Release; onClose: () => void
   ];
 
   return (
-    <div
-      className="fixed inset-0 z-[60] flex items-end justify-center bg-abyss/85 backdrop-blur-md animate-fadein sm:items-center sm:p-6"
+    <dialog
+      ref={ref}
+      className="native-dialog fixed inset-0 z-[60] flex items-end justify-center bg-abyss/85 backdrop-blur-md animate-fadein sm:items-center sm:p-6"
       onClick={onClose}
-      role="dialog"
-      aria-modal="true"
+      onCancel={e => { e.preventDefault(); e.stopPropagation(); onClose(); }}
+      aria-label={r.title}
     >
       <div
         className="relative max-h-[92vh] w-full max-w-4xl overflow-y-auto rounded-t-3xl border border-white/10 bg-deep shadow-2xl sm:rounded-3xl"
@@ -218,6 +230,6 @@ function ReleaseModal({ r, onClose, onVideo }: { r: Release; onClose: () => void
           </div>
         </div>
       </div>
-    </div>
+    </dialog>
   );
 }

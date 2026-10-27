@@ -208,3 +208,9 @@ body {
     transition-duration: 0.001ms !important;
   }
 }
+
+/* Native modal semantics keep focus and Escape scoped to the topmost overlay. */
+.native-dialog{width:100%;height:100dvh;max-width:none;max-height:none;margin:0;border:0;color:inherit}
+.native-dialog:not([open]){display:none}
+.native-dialog::backdrop{background:transparent}
+:where(button,a,input,select):focus-visible{outline:2px solid var(--color-aqua,#7fdbe6);outline-offset:4px}
